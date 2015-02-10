@@ -58,7 +58,7 @@ class Block(object):
 
 		return min(total_on,total_off)
 
-	def remove_block_from_signal(self,data,diff=False):
+	def remove_block_from_signal(self,data,diff):
 		"""
 			Remove the block from the signal
 
