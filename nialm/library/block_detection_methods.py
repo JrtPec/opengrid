@@ -18,45 +18,58 @@ from block import *
 				return Block object, None if detection fails
 """
 
-class Negative_edge_detection(object):
+class Single_to_single(object):
+	"""
+		Detects a single-point event, matches with a single-point event
+	"""
 	def __init__(self):
-		self.__name__ = "Negative Edge Detection"
+		print "Init method"
+		self.__name__ = "Single to single"
 		self.param_list = {}
 
 		direction = {'direction':[1,-1]} #possible directions in which to search for a peak. 1 is starting at the front, -1 at the back
 		self.param_list.update(direction)
+		polarity = {'polarity':['pos','neg']} #should the algorithm search for a negative or positive peak
+		self.param_list.update(polarity)
 
 	def __repr__(self):
 		return self.__name__
 
 	def execute(self,params,data,tol):
-		"""
-			Detect a negative spike, match an according positive
-		"""
 		direction = params['direction']
+		polarity = params['polarity']
 
-		negatives = data[data < 0][::direction]
+		negatives = data[data < 0]
 		positives = data[data > 0]
 
-		for neg_ix,neg_val in negatives.iteritems():
-			for pos_ix,pos_val in positives[0:neg_ix][::-1].iteritems():
-				if is_match(neg_val,pos_val,tol):
-					off = Event(index=neg_ix,value=neg_val)
-					on = Event(index=pos_ix,value=pos_val)
-					block = Block(on,off)
-					block.remove_block_from_signal(data=data,diff=True)
-					return block
+		if polarity == 'pos':
+			for ix,val in positives[::direction].iteritems():
+				for ix2,val2 in negatives[ix:].iteritems():
+					if self.is_match(vala=val,valb=val2,tol=tol):
+						return self.make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
+		elif polarity == 'neg':
+			for ix2,val2 in negatives[::direction].iteritems():
+				for ix,val in positives[0:ix2][::-1].iteritems():
+					if self.is_match(vala=val,valb=val2,tol=tol):
+						return self.make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
 
 		return None
 
-def is_match(neg,pos,tol):
-    if np.abs(neg + pos) <= pos * tol:
-        return True
-    else:
-        return False
+	def is_match(self,vala,valb,tol):
+	    if np.abs(vala + valb) <= vala * tol:
+	        return True
+	    else:
+	        return False
+
+	def make_block_and_remove_from_signal(self,on_ix,on_val,off_ix,off_val,data):
+		on = Event(index=on_ix,value=on_val)
+		off = Event(index=off_ix,value=off_val)
+		block = Block(on,off)
+		block.remove_block_from_signal(data=data,diff=True)
+		return block
 
 def get_methodlist():
 	METHODLIST = []
-	METHOD_A = Negative_edge_detection()
+	METHOD_A = Single_to_single()
 	METHODLIST.append(METHOD_A)
 	return METHODLIST
