@@ -5,11 +5,8 @@ class Gene(object):
 		A Gene contains one number deciding what method will be used
 		and a list of parameters for that method
 	"""
-	def __init__(self, method=None, methodlist=None):
-		if method is None:
-			self.method = random.choice(methodlist)
-		else:
-			self.method = method
+	def __init__(self, methodlist):
+		self.method = random.choice(methodlist)
 
 		#generate list of random parameters, based on the parameter requirements set by the method
 		self.params = {}
@@ -51,5 +48,4 @@ class Gene(object):
 			result object, list or dataframe
 				specific to the problem at hand
 		"""
-
 		return self.method.execute(params=self.params,data=data,tol=tol)	
