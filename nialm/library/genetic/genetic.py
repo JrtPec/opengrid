@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from IPython import display
 
-def extract_events(problem,generations=100,pop_size=100,elitism=1,breeding_percentage=0.1,plot_evolution=False):
+def extract_events(problem,generations=100,pop_size=100,elitism=1,breeding_percentage=0.1,plot_evolution=False,plot_end=False):
 	"""
 		Performs an analysis of switch on-off events using a genetic algorithm, saves the analysis results in seperate files
 
@@ -26,7 +26,7 @@ def extract_events(problem,generations=100,pop_size=100,elitism=1,breeding_perce
 	#build the starting population
 	pop = Population(size=pop_size,problem=problem)
 
-	if plot_evolution == True:
+	if plot_evolution == True or plot_end == True:
 		best_score = [pop.get_score(1)]
 		top_score = [pop.get_score(int(pop_size*breeding_percentage))]
 		mean_score = [pop.get_score(pop_size)]
@@ -34,19 +34,26 @@ def extract_events(problem,generations=100,pop_size=100,elitism=1,breeding_perce
 	#loop for the amount of generations
 	for i in range(0,generations):
 		pop.evolve(elitism=elitism,breeding_percentage=breeding_percentage)
-		if plot_evolution == True:
+		if plot_evolution == True or plot_end == True:
 			best_score.append(pop.get_score(1))
 			top_score.append(pop.get_score(int(pop_size*breeding_percentage)))
 			mean_score.append(pop.get_score(pop_size))
+		if plot_evolution==True:
 			display.clear_output(wait=True)
-			plt.plot(best_score, label="best")
-			plt.plot(top_score, label="top")
-			plt.plot(mean_score, label="mean")
-			plt.ylabel('score')
-			plt.xlabel('generations')
-			plt.legend()
-			plt.show()
-		
+			plot_genetic(best_score,top_score,mean_score)
+	
+	if plot_end==True:
+		plot_genetic(best_score,top_score,mean_score)	
 
 	#find the best individual
 	return pop.get_best()
+
+def plot_genetic(best_score,top_score,mean_score):
+	plt.plot(best_score, label="best")
+	plt.plot(top_score, label="top")
+	plt.plot(mean_score, label="mean")
+	plt.ylabel('score')
+	plt.xlabel('generations')
+	plt.legend()
+	plt.show()
+	return True
