@@ -96,4 +96,9 @@ class Block(object):
 		drawable[drawable.first_valid_index()-pd.Timedelta(seconds=1)] = 0.0
 		return drawable.sort_index()
 
-
+	def is_valid(self,orig_signal):
+		mean = orig_signal[self.df.first_valid_index():self.df[::-1].first_valid_index()].mean()
+		if mean < self.get_avg_power():
+			return False
+		else:
+			return True

@@ -66,7 +66,7 @@ class Individual(object):
 			return False
 		else:
 			response = gene.exec_method(data=self.data,tol=self.problem.tol)
-			if response is not None:
+			if response is not None and response.is_valid(orig_signal=self.problem.df_orig):
 				self.parts.append(response)
 				return True
 			else:
