@@ -45,29 +45,29 @@ class Single_to_single(object):
 			for ix,val in positives[::direction].iteritems():
 				for ix2,val2 in negatives[ix:].iteritems():
 					if is_match(vala=val,valb=val2,tol=tol):
-						return self.make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
+						return make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
 		else:
 			for ix2,val2 in negatives[::direction].iteritems():
 				for ix,val in positives[0:ix2][::-1].iteritems():
 					if is_match(vala=val,valb=val2,tol=tol):
-						return self.make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
+						return make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
 
 		return None
 
 	
 
-	def make_block_and_remove_from_signal(self,on_ix,on_val,off_ix,off_val,data):
-		on = Event(index=on_ix,value=on_val)
-		off = Event(index=off_ix,value=off_val)
-		block = Block(on,off)
-		block.remove_block_from_signal(data=data,diff=True)
-		return block
+def make_block_and_remove_from_signal(on_ix,on_val,off_ix,off_val,data):
+	on = Event(index=on_ix,value=on_val)
+	off = Event(index=off_ix,value=off_val)
+	block = Block(on,off)
+	block.remove_block_from_signal(data=data,diff=True)
+	return block
 
 def is_match(vala,valb,tol):
-	    if np.abs(vala + valb) <= vala * tol:
-	        return True
-	    else:
-	        return False
+    if np.abs(vala + valb) <= vala * tol:
+        return True
+    else:
+        return False
 
 def get_methodlist():
 	METHODLIST = []
