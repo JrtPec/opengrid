@@ -23,7 +23,6 @@ class Single_to_single(object):
 		Detects a single-point event, matches with a single-point event
 	"""
 	def __init__(self):
-		print "Init method"
 		self.__name__ = "Single to single"
 		self.param_list = {}
 
@@ -47,7 +46,7 @@ class Single_to_single(object):
 				for ix2,val2 in negatives[ix:].iteritems():
 					if self.is_match(vala=val,valb=val2,tol=tol):
 						return self.make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
-		elif polarity == 'neg':
+		else:
 			for ix2,val2 in negatives[::direction].iteritems():
 				for ix,val in positives[0:ix2][::-1].iteritems():
 					if self.is_match(vala=val,valb=val2,tol=tol):
