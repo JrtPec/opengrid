@@ -1,5 +1,6 @@
 import os, sys, inspect
 import numpy as np
+import pandas as pd
 
 script_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # add the path to opengrid to sys.path
@@ -9,7 +10,7 @@ from opengrid.library import houseprint
 from opengrid.library import fluksoapi
 from opengrid.library import config
 
-def get_flukso_data(start,end,sensortype='electricity',sensor=None):
+def get_flukso_data(start,end,sensortype='electricity',sensor=None,token=None):
 	"""
 	Opens a connection to Flukso, downloads raw data for the given type and time.
 	Transforms the cumulative data into its differential.
@@ -50,13 +51,19 @@ def get_flukso_data(start,end,sensortype='electricity',sensor=None):
 	tmpos = tmpo.Session()
 	tmpos.debug = False
 
-	tmpo_sensors = [sid for (sid,) in tmpos.dbcur.execute(tmpo.SQL_SENSOR_ALL)]
-	elec_sensors = set(tmpo_sensors) & set(hp.get_sensors_by_type(sensortype))
-	print "{} electricity sensors".format(len(elec_sensors))
+	if sensor and token:
+		tmpos.add(sensor,token)
+	else:
+		tmpo_sensors = [sid for (sid,) in tmpos.dbcur.execute(tmpo.SQL_SENSOR_ALL)]
+		elec_sensors = set(tmpo_sensors) & set(hp.get_sensors_by_type(sensortype))
+		print "{} electricity sensors".format(len(elec_sensors))
 	tmpos.sync()
 
 	#Load dataframe for selected sensors end timing
-	df = tmpos.dataframe(elec_sensors,head=start,tail=end)
+	if sensor and token:
+		df = tmpos.series(sensor,head=start,tail=end)
+	else:
+		df = tmpos.dataframe(elec_sensors,head=start,tail=end)
 
 	#Re-index and interpolate
 	df_interpol = clean_tmpo(df)
@@ -65,7 +72,8 @@ def get_flukso_data(start,end,sensortype='electricity',sensor=None):
 	df_diff = df_interpol.diff()*3600 #1Wh per second = 3600W, in kW
 
 	#Filter
-	df_diff_filtered = filter_diff(df_diff)
+
+	df_diff_filtered = filter_diff(df_diff,token)
 
 	return df_diff_filtered
 
@@ -93,7 +101,7 @@ def clean_tmpo(df):
 
 	return df_interpol
 
-def filter_diff(df_diff):
+def filter_diff(df_diff,token):
 	"""
 	Removes single sample spikes which are caused by quantization errors
 
@@ -112,7 +120,11 @@ def filter_diff(df_diff):
 	for sensor in df_diff_filtered:
     
 	    #Add all values to list
-	    values = df_diff[sensor].tolist()
+
+	    if token:
+	    	values = df_diff.tolist()
+	    else:
+	    	values = df_diff[sensor].tolist()
 
 	    #Compare each value with the previous and next value
 	    #If the current value is not between its two neighbors, it is a spike.
@@ -131,6 +143,10 @@ def filter_diff(df_diff):
 	            break
 
 	    #Overwrite dataframe with new values
-		df_diff_filtered[sensor] = values
+	    if token:
+	    	df_diff_filtered = pd.Series(data=values,index=df_diff.index,name=sensor)
+	    	return df_diff_filtered
+	    else:
+			df_diff_filtered[sensor] = values
 
 	return df_diff_filtered	
