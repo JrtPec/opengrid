@@ -64,27 +64,40 @@ class Multiple_to_single(object):
 
 		direction = {'direction':[1,-1]} #possible directions in which to search for a peak. 1 is starting at the front, -1 at the back
 		self.param_list.update(direction)
+		polarity = {'polarity':['pos','neg']} #should the algorithm search for a negative or positive peak
+		self.param_list.update(polarity) 
 
 	def __repr__(self):
 		return self.__name__
 
 	def execute(self,params,data,tol):
 		direction = params['direction']
-
+		polarity = params['polarity']
 
 		negatives = data[data < 0]
 		positives = data[data > 0]
 
-		off = self.find_multiple(negatives,direction)
-		if off:
-			block = self.match_single_positive(positives,off,tol)
-			if block:
-				block.remove_block_from_signal(data=data,diff=True)
-				return block
+		if polarity == 'neg':
+			off = self.find_multiple(negatives,direction)
+			if off:
+				block = self.match_single_positive(positives,off,tol)
+				if block:
+					block.remove_block_from_signal(data=data,diff=True)
+					return block
+				else:
+					return None
 			else:
 				return None
 		else:
-			return None
+			on = self.find_multiple(positives,direction)
+			if on:
+				block = self.match_single_negative(negatives,on,tol)
+				if block:
+					block.remove_block_from_signal(data=data,diff=True)
+					return block
+				else:
+					return None
+			else: return None
 
 	def find_multiple(self,series,direction=1):
 	    for i in range(0,series.size)[::direction]:
@@ -107,7 +120,15 @@ class Multiple_to_single(object):
 	        if is_match(vala=val,valb=target_value,tol=tol):
 	            on = Event(index=ix,value=val)
 	            block = Block(on,event)
-	            #remove block from signal
+	            return block
+	    return None
+
+	def match_single_negative(self,series,event,tol):
+	    target_value = event.get_total_value()
+	    for ix,val in series[event.get_last_index():].iteritems():
+	        if is_match(vala=target_value,valb=val,tol=tol):
+	            off = Event(index=ix,value=val)
+	            block = Block(event,off)
 	            return block
 	    return None
 
