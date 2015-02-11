@@ -14,12 +14,16 @@ class Block(object):
 			index=(self.on.indexes + self.off.indexes)
 			).sort_index()
 
+		self.duration = self.get_duration()
+		self.avg_power = self.get_avg_power()
+		self.score = self.get_score()
+
 	def __repr__(self):
 		print "On: ", self.df.first_valid_index()
 		print "Off: ", self.df[::-1].first_valid_index()
-		print "Duration: ", self.get_duration()
-		print "Power: ", self.get_avg_power()
-		print "Score: ", self.get_score()
+		print "Duration: ", self.duration
+		print "Power: ", self.avg_power
+		print "Score: ", self.score
 		return ""
 
 	def get_duration(self):
@@ -42,7 +46,7 @@ class Block(object):
 			-------
 			float
 		"""
-		return self.get_duration() * self.get_avg_power() / 3600
+		return self.duration * self.avg_power / 3600
 
 	def get_avg_power(self):
 		"""
@@ -98,7 +102,7 @@ class Block(object):
 
 	def is_valid(self,orig_signal):
 		mean = orig_signal[self.df.first_valid_index():self.df[::-1].first_valid_index()].mean()
-		if mean < self.get_avg_power():
+		if mean < self.avg_power:
 			return False
 		else:
 			return True

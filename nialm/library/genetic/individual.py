@@ -83,5 +83,5 @@ class Individual(object):
 		"""
 		score = 0.0
 		for part in self.parts:
-			score += part.get_score()
+			score += part.score
 		self.score = score / self.problem.score_ceiling
