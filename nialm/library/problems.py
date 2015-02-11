@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from block_detection_methods import get_methodlist
 
 """
@@ -13,7 +14,8 @@ class Disaggregation_problem(object):
 
 	def __init__(self,orig_data,tol=0.1,mutation_rate=0.05):
 		self.df_orig = orig_data
-		self.df_diff_full = orig_data.diff()
+		self.df_norm = self.remove_bias()
+		self.df_diff_full = self.df_norm.diff()
 		self.df_diff = self.df_diff_full[self.df_diff_full < 0].combine_first(self.df_diff_full[self.df_diff_full > 0])
 		self.tol = tol
 		self.mutation_rate = mutation_rate
@@ -33,12 +35,37 @@ class Disaggregation_problem(object):
 		"""
 			Calculates the highest attainable score
 		"""
-		mean = self.df_orig.mean()
-		begin = self.df_orig.first_valid_index()
-		end = self.df_orig[::-1].first_valid_index()
+		mean = self.df_norm.mean()
+		begin = self.df_norm.first_valid_index()
+		end = self.df_norm[::-1].first_valid_index()
 
-		difference =  self.df_orig[end] - self.df_orig[begin] 
+		difference =  self.df_norm[end] - self.df_norm[begin] 
 		
 		timespan = (end - begin) / np.timedelta64(1,'s')
 
 		return mean * timespan / 3600
+
+	def remove_bias(self):
+		bias1 = []
+		bias2 = []
+		for value in self.df_orig[self.df_orig.first_valid_index():]:
+		    if not bias1:
+		        low = value
+		    elif value<low:
+		        low = value
+		    bias1.append(low)
+		for value in self.df_orig[self.df_orig.first_valid_index():][::-1]:
+		    if not bias2:
+		        low = value
+		    elif value<low:
+		        low = value
+		    bias2.append(low)
+		    
+		bias3 = []
+		for a,b in zip(bias1,bias2[::-1]):
+		    bias3.append(max(a,b))
+		    
+		bias = pd.Series(data=bias3,
+		                 index=self.df_orig[self.df_orig.first_valid_index():].index)
+		                 
+		return self.df_orig - bias
