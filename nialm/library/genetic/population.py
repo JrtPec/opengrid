@@ -32,6 +32,8 @@ class Population(object):
 		for individual in self.individuals[elitism:]:
 			parentA,parentB = random.sample(top,2)
 			individual = breed(parentA,parentB)
+			individual.check_genes()
+			individual.calculate_score()
 
 	def sort(self):
 		"""
@@ -64,13 +66,7 @@ def breed(parentA,parentB):
 		-------
 		Individual
 	"""
-	genes = []
 	for geneA,geneB in izip_longest(parentA.genes,parentB.genes,fillvalue=None):
-		if geneA is not None and geneB is not None:
-			genes.append(random.choice([geneA,geneB]))
-		elif geneA is not None:
-			genes.append(geneA)
-		elif geneB is not None:
-			genes.append(geneB)
+			geneA = random.choice([geneA,geneB])
 
-	return Individual(genes=genes,problem=parentA.problem)
+	return parentA
