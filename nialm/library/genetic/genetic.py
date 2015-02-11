@@ -26,7 +26,7 @@ def extract_events(problem,generations=100,pop_size=100,elitism=1,breeding_perce
 	#build the starting population
 	pop = Population(size=pop_size,problem=problem)
 
-	if plot_evolution = True:
+	if plot_evolution == True:
 		best_score = [pop.get_score(1)]
 		top_score = [pop.get_score(int(pop_size*breeding_percentage))]
 		mean_score = [pop.get_score(pop_size)]
@@ -34,7 +34,7 @@ def extract_events(problem,generations=100,pop_size=100,elitism=1,breeding_perce
 	#loop for the amount of generations
 	for i in range(0,generations):
 		pop.evolve(elitism=elitism,breeding_percentage=breeding_percentage)
-		if plot_evolution = True:
+		if plot_evolution == True:
 			best_score.append(pop.get_score(1))
 			top_score.append(pop.get_score(int(pop_size*breeding_percentage)))
 			mean_score.append(pop.get_score(pop_size))
