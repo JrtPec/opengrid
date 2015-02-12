@@ -19,7 +19,6 @@ class Individual(object):
 
 	def __repr__(self):
 		print "Number of genes: ",len(self.genes)
-		print "Ceiling: ",self.problem.score_ceiling
 		print "Solution percentage: ",self.score*100,"%"
 		return ""
 
