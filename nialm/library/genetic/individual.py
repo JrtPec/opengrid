@@ -13,8 +13,6 @@ class Individual(object):
 		self.genes = genes
 
 		self.init_data()
-		self.check_genes()
-		self.calculate_score()
 		
 
 	def __repr__(self):
@@ -26,6 +24,8 @@ class Individual(object):
 		self.norm_data = self.problem.df_norm.copy()
 		self.der_data = self.problem.df_diff.copy()
 		self.parts = []
+		self.check_genes()
+		self.score = self.calculate_score()
 
 	def check_genes(self):
 		for i,gene in enumerate(self.genes):
@@ -88,4 +88,4 @@ class Individual(object):
 		score = 0.0
 		for part in self.parts:
 			score += part.score
-		self.score = score / self.problem.score_ceiling
+		return score / self.problem.score_ceiling
