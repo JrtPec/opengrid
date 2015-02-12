@@ -12,6 +12,15 @@ class Population(object):
 			ind = Individual(problem)
 			self.individuals.append(ind)
 
+	def __repr__(self):
+		print 'Size: ',len(self.individuals)
+		return ""
+
+	def print_individuals(self):
+		for i, individual in enumerate(self.individuals):
+			print "\t", "Individual number ",i
+			print "\t",individual
+
 	def evolve(self,elitism,breeding_percentage):
 		'''
 		Generates the next generation from an existing population by selectively breeding the most successful
