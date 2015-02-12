@@ -32,6 +32,7 @@ class Population(object):
 		for individual in self.individuals[elitism:]:
 			parentA,parentB = random.sample(top,2)
 			individual = breed(parentA,parentB)
+			individual.init_data()
 			individual.check_genes()
 			individual.calculate_score()
 

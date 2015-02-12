@@ -7,13 +7,12 @@ class Individual(object):
 		It contains genes, which represent the individual methods that are used to solve the problem.
 	"""
 	def __init__(self,problem,genes=[]):
-		self.data = problem.df_diff.copy()
 		self.problem = problem
 
 		self.parts = []
 		self.genes = genes
-		self.score = 0
 
+		self.init_data()
 		self.check_genes()
 		self.calculate_score()
 		
@@ -23,6 +22,9 @@ class Individual(object):
 		print "Ceiling: ",self.problem.score_ceiling
 		print "Solution percentage: ",self.score*100,"%"
 		return ""
+
+	def init_data(self):
+		self.data = self.problem.df_diff.copy()
 
 	def check_genes(self):
 		for gene in self.genes:
