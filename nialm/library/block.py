@@ -62,30 +62,31 @@ class Block(object):
 
 		return min(total_on,total_off)
 
-	def remove_block_from_signal(self,data,diff):
+	def remove_block_from_signal(self,norm_data=None,der_data=None):
 		"""
 			Remove the block from the signal
 
 			Parameters
 			----------
-			data : Series
-				Original signal with the block still present
-			diff : bool (default=False)
-				True => the original signal is a differential signal
-				False => The original signal is a power signal #NOT IMPLEMENTED
+			norm_data : DataFrame
+				normalised data for the individual
+			der_data : DataFrame
+				first derivative of the normalised data
 
 			Returns
 			-------
-			Series, but make sure to do the drop inplace to avoid extra copies
+			Nothing, make sure to do the drop inplace to avoid extra copies
 		"""
 
-		if diff == True:
+		if der_data is not None:
 			for index,value in self.df.iteritems():
-				data.drop(index,inplace=True)
-			return data
-		else:
-			#subtract the avg_power from all values along the duration of the block
-			pass
+				der_data.drop(index,inplace=True) #maybe test simple subtraction to speed up process
+		if norm_data is not None:
+			block = self.df.cumsum().resample('s').interpolate('zero')
+			for index,value in block.iteritems():
+				norm_data[index] -= abs(value)
+		return True
+			
 
 	def get_drawable(self):
 		"""

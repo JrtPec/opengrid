@@ -33,7 +33,7 @@ class Gene(object):
 			if random.random() < mutation_rate:
 				self.params.update({key : random.choice(possibilities)})				
 
-	def exec_method(self,data,tol):
+	def exec_method(self,der_data,norm_data,tol):
 		"""
 			Executes the method and its parameters on the given data.
 			Returns a result object
@@ -48,4 +48,4 @@ class Gene(object):
 			result object, list or dataframe
 				specific to the problem at hand
 		"""
-		return self.method.execute(params=self.params,data=data,tol=tol)	
+		return self.method.execute(params=self.params,der_data=der_data,norm_data=norm_data,tol=tol)	

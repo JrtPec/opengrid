@@ -34,23 +34,23 @@ class Single_to_single(object):
 	def __repr__(self):
 		return self.__name__
 
-	def execute(self,params,data,tol):
+	def execute(self,params,norm_data,der_data,tol):
 		direction = params['direction']
 		polarity = params['polarity']
 
-		negatives = data[data < 0]
-		positives = data[data > 0]
+		negatives = der_data[der_data < 0]
+		positives = der_data[der_data > 0]
 
 		if polarity == 'pos':
 			for ix,val in positives[::direction].iteritems():
 				for ix2,val2 in negatives[ix:].iteritems():
 					if is_match(vala=val,valb=val2,tol=tol):
-						return make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
+						return make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,der_data=der_data,norm_data=norm_data)
 		else:
 			for ix2,val2 in negatives[::direction].iteritems():
 				for ix,val in positives[0:ix2][::-1].iteritems():
 					if is_match(vala=val,valb=val2,tol=tol):
-						return make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,data=data)
+						return make_block_and_remove_from_signal(on_ix=ix,on_val=val,off_ix=ix2,off_val=val2,der_data=der_data,norm_data=norm_data)
 
 		return None
 
@@ -70,19 +70,19 @@ class Multiple_to_single(object):
 	def __repr__(self):
 		return self.__name__
 
-	def execute(self,params,data,tol):
+	def execute(self,params,der_data,norm_data,tol):
 		direction = params['direction']
 		polarity = params['polarity']
 
-		negatives = data[data < 0]
-		positives = data[data > 0]
+		negatives = der_data[der_data < 0]
+		positives = der_data[der_data > 0]
 
 		if polarity == 'neg':
 			off = self.find_multiple(negatives,direction)
 			if off:
 				block = self.match_single_positive(positives,off,tol)
-				if block:
-					block.remove_block_from_signal(data=data,diff=True)
+				if block and block.is_valid(norm_signal=norm_data):
+					block.remove_block_from_signal(der_data=der_data,norm_data=norm_data)
 					return block
 				else:
 					return None
@@ -92,8 +92,8 @@ class Multiple_to_single(object):
 			on = self.find_multiple(positives,direction)
 			if on:
 				block = self.match_single_negative(negatives,on,tol)
-				if block:
-					block.remove_block_from_signal(data=data,diff=True)
+				if block and block.is_valid(norm_signal=norm_data):
+					block.remove_block_from_signal(der_data=der_data,norm_data=norm_data)
 					return block
 				else:
 					return None
@@ -132,12 +132,15 @@ class Multiple_to_single(object):
 	            return block
 	    return None
 
-def make_block_and_remove_from_signal(on_ix,on_val,off_ix,off_val,data):
+def make_block_and_remove_from_signal(on_ix,on_val,off_ix,off_val,der_data,norm_data):
 	on = Event(index=on_ix,value=on_val)
 	off = Event(index=off_ix,value=off_val)
 	block = Block(on,off)
-	block.remove_block_from_signal(data=data,diff=True)
-	return block
+	if block.is_valid(norm_signal=norm_data):
+		block.remove_block_from_signal(der_data=der_data,norm_data=norm_data)
+		return block
+	else:
+		return None
 
 def is_match(vala,valb,tol):
     if np.abs(vala + valb) <= vala * tol:

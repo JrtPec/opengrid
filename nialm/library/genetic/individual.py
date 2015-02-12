@@ -24,16 +24,19 @@ class Individual(object):
 		return ""
 
 	def init_data(self):
-		self.data = self.problem.df_diff.copy()
+		self.norm_data = self.problem.df_norm.copy()
+		self.der_data = self.problem.df_diff.copy()
+		self.parts = []
 
 	def check_genes(self):
-		for gene in self.genes:
+		for i,gene in enumerate(self.genes):
 			if random.random() < self.problem.mutation_rate:
 				gene = Gene(methodlist=self.problem.methodlist)
 			else:
 				gene.mutate(self.problem.mutation_rate)
 
 			if not self.is_good_gene(gene):
+				self.genes = self.genes[:i]
 				return True
 
 		#If all genes are checked and good, try adding new genes
@@ -67,8 +70,8 @@ class Individual(object):
 		if gene is None:
 			return False
 		else:
-			response = gene.exec_method(data=self.data,tol=self.problem.tol)
-			if response is not None and response.is_valid(norm_signal=self.problem.df_norm):
+			response = gene.exec_method(der_data=self.der_data,norm_data=self.norm_data,tol=self.problem.tol)
+			if response is not None:
 				self.parts.append(response)
 				return True
 			else:
