@@ -7,6 +7,7 @@ class Population(object):
 
 	"""
 	def __init__(self,size,problem):
+		self.size = size
 		self.individuals = []
 		for i in range(0,size):
 			ind = Individual(problem)
@@ -34,14 +35,14 @@ class Population(object):
 			percentage of the population from which parents can be chosen
 			ie. 0.1 means the parents come from the top 10% of the population
 		'''
-		num_parents = int(len(self.individuals)*breeding_percentage)
+		num_parents = int(self.size*breeding_percentage)
 		self.sort()
 		top = self.individuals[:num_parents]
 
-		for individual in self.individuals[elitism:]:
+		for i,individual in enumerate(self.individuals):
+			if i < elitism: continue
 			parentA,parentB = random.sample(top,2)
-			individual = breed(parentA,parentB)
-			individual.init_data()
+			self.individuals[i] = breed(parentA,parentB)
 
 	def sort(self):
 		"""
@@ -74,7 +75,12 @@ def breed(parentA,parentB):
 		-------
 		Individual
 	"""
+	genes = []
 	for geneA,geneB in izip_longest(parentA.genes,parentB.genes,fillvalue=None):
-			geneA = random.choice([geneA,geneB])
+		gene = random.choice([geneA,geneB])
+		if gene is not None:
+			genes.append(gene)
+		else:
+			break
 
-	return parentA
+	return Individual(problem=parentA.problem,genes=genes)
