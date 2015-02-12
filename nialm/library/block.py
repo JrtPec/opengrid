@@ -103,7 +103,7 @@ class Block(object):
 
 	def is_valid(self,norm_signal):
 		mean = norm_signal[self.df.first_valid_index():self.df[::-1].first_valid_index()].mean()
-		if mean < self.avg_power:
+		if abs(mean - self.avg_power) > mean*0.1: #apparently there is some kind of rounding error when calculating mean, or avg_power...
 			return False
 		else:
 			return True
