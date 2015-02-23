@@ -71,6 +71,7 @@ def get_flukso_data(start,end,sensortype='electricity',sensor=None,token=None):
 	#Take the differential
 	df_diff = df_interpol.diff()*3600 #1Wh per second = 3600W, in kW
 
+	#return df_diff
 	#Filter
 
 	df_diff_filtered = filter_diff(df_diff,token)
@@ -150,3 +151,40 @@ def filter_diff(df_diff,token):
 			df_diff_filtered[sensor] = values
 
 	return df_diff_filtered	
+
+def get_raw_data(start,end,sensortype="electricity",sensor=None,token=None):
+	c=config.Config()
+
+	# find tmpo
+	path_to_tmpo = c.get('tmpo','folder')
+	if not os.path.exists(path_to_tmpo):
+		raise IOError("Provide your path to the tmpo folder in your config.ini file")
+	else:
+		sys.path.append(path_to_tmpo)
+		import tmpo
+
+	#load housprint file
+	try:
+		hp = houseprint.load_houseprint_from_file('hp_anonymous.pkl')
+	except:
+		raise IOError("Houseprint file not found")
+
+	#load tmpo session
+	tmpos = tmpo.Session()
+	tmpos.debug = False
+
+	if sensor and token:
+		tmpos.add(sensor,token)
+	else:
+		tmpo_sensors = [sid for (sid,) in tmpos.dbcur.execute(tmpo.SQL_SENSOR_ALL)]
+		elec_sensors = set(tmpo_sensors) & set(hp.get_sensors_by_type(sensortype))
+		print "{} electricity sensors".format(len(elec_sensors))
+	tmpos.sync()
+
+	#Load dataframe for selected sensors end timing
+	if sensor and token:
+		df = tmpos.series(sensor,head=start,tail=end)
+	else:
+		df = tmpos.dataframe(elec_sensors,head=start,tail=end)
+
+	return df

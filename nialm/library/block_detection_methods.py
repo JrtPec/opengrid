@@ -104,7 +104,7 @@ class Multiple_to_single(object):
 	        if i==series.size-1: continue
 	        if timediff(series,i) == 1:
 	            event = Event(index=series.index[i],value=series[i])
-	            event.add_point(index=series.index[i+1],value=series[i+1])
+	            event.add_point(wi e)
 	            while True:
 	                i += 1
 	                if i==series.size-1 or timediff(series,i) !=1:

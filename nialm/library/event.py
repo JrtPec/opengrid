@@ -14,8 +14,8 @@ class Event(object):
 		print "Values: ", self.values
 		return ""
 
-	def __str__(self):
-		return self.__repr__()
+	def __eq__(self,other):
+		return self.get_first_index() == other.get_first_index() and self.get_last_index() == other.get_last_index() and self.get_total_value() == other.get_total_value()
 
 	def add_point(self,index,value):
 		"""
@@ -42,8 +42,6 @@ class Event(object):
 		"""
 
 		return sum(self.values)
-
-	#FOLLOWING METHODS ARE DEPRECATED
 
 	def get_first_index(self):
 		"""

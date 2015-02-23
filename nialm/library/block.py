@@ -5,9 +5,13 @@ class Block(object):
 	"""
 		A Block literally is a block of consumed power, characterized by an ON-event and an OFF-event
 	"""
-	def __init__(self, on, off):
-		self.on = on
-		self.off = off
+	def __init__(self, event1, event2):
+		if event1.get_total_value > 0:
+			self.on = event1
+			self.off = event2
+		else:
+			self.on = event2
+			self.off = event1
 
 		self.df = pd.Series(
 			data=(self.on.values + self.off.values),
@@ -21,9 +25,9 @@ class Block(object):
 	def __repr__(self):
 		print "On: ", self.df.first_valid_index()
 		print "Off: ", self.df[::-1].first_valid_index()
-		print "Duration: ", self.duration
-		print "Power: ", self.avg_power
-		print "Score: ", self.score
+		print "Duration: ", self.duration, " s"
+		print "Average power: ", self.avg_power, ' W'
+		print "Total power: ", self.score, ' Wh'
 		return ""
 
 	def get_duration(self):
@@ -35,7 +39,7 @@ class Block(object):
 			float : amount of seconds
 		"""
 		timedelta = self.df[::-1].first_valid_index() - self.df.first_valid_index()
-		return timedelta / np.timedelta64(1,'s')
+		return timedelta / np.timedelta64(1,'s') + 1
 
 	def get_score(self):
 		"""
@@ -46,7 +50,7 @@ class Block(object):
 			-------
 			float
 		"""
-		return self.duration * self.avg_power / 3600
+		return self.get_drawable().sum() /3600
 
 	def get_avg_power(self):
 		"""
@@ -57,10 +61,8 @@ class Block(object):
 			float
 				average power in W
 		"""
-		total_on = abs(self.on.get_total_value())
-		total_off = abs(self.off.get_total_value())
 
-		return min(total_on,total_off)
+		return self.get_drawable().mean()
 
 	def remove_block_from_signal(self,norm_data=None,der_data=None):
 		"""
@@ -86,7 +88,6 @@ class Block(object):
 			for index,value in block.iteritems():
 				norm_data[index] -= abs(value)
 		return True
-			
 
 	def get_drawable(self):
 		"""
@@ -102,8 +103,9 @@ class Block(object):
 		return drawable.sort_index()
 
 	def is_valid(self,norm_signal):
-		mean = norm_signal[self.df.first_valid_index():self.df[::-1].first_valid_index()].mean()
-		if abs(mean - self.avg_power) > mean*0.1: #apparently there is some kind of rounding error when calculating mean, or avg_power...
+		mean = norm_signal[self.df.first_valid_index()-pd.Timedelta(seconds=1):self.df[::-1].first_valid_index()].mean()
+		minimum = norm_signal[self.on.get_last_index():self.off.get_first_index()-pd.Timedelta(seconds=1)].min()
+		if self.avg_power > mean or np.isnan(minimum) or self.avg_power > minimum:
 			return False
 		else:
 			return True

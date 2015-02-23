@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
-from block_detection_methods import get_methodlist
+from block_detection_methods3 import extract_events as ee
+from block_detection_methods2 import get_methodlist
+
 
 """
 	A Problem represents a multivariable problem which can be
@@ -16,7 +18,8 @@ class Disaggregation_problem(object):
 		self.df_orig = orig_data
 		self.df_norm = self.remove_bias()
 		self.df_diff_full = self.df_norm.diff()
-		self.df_diff = self.df_diff_full[self.df_diff_full < 0].combine_first(self.df_diff_full[self.df_diff_full > 0])
+		#self.df_diff = self.df_diff_full[self.df_diff_full < 0].combine_first(self.df_diff_full[self.df_diff_full > 0])
+		self.events = ee(data=self.df_diff_full)
 		self.tol = tol
 		self.mutation_rate = mutation_rate
 		self.methodlist = get_methodlist()
@@ -35,7 +38,8 @@ class Disaggregation_problem(object):
 		"""
 			Calculates the highest attainable score
 		"""
-		mean = self.df_norm.mean()
+		summ = self.df_norm.sum()
+		'''
 		begin = self.df_norm.first_valid_index()
 		end = self.df_norm[::-1].first_valid_index()
 
@@ -44,6 +48,8 @@ class Disaggregation_problem(object):
 		timespan = (end - begin) / np.timedelta64(1,'s')
 
 		return mean * timespan / 3600
+		'''
+		return summ/3600
 
 	def remove_bias(self):
 		bias1 = []

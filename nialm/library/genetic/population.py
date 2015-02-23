@@ -36,13 +36,13 @@ class Population(object):
 			ie. 0.1 means the parents come from the top 10% of the population
 		'''
 		num_parents = int(self.size*breeding_percentage)
-		self.sort()
 		top = self.individuals[:num_parents]
 
 		for i,individual in enumerate(self.individuals):
 			if i < elitism: continue
 			parentA,parentB = random.sample(top,2)
 			self.individuals[i] = breed(parentA,parentB)
+			#Individual(problem=self.individuals[0].problem,genes=self.individuals[0].genes)#breed(parentA,parentB)
 
 	def sort(self):
 		"""
@@ -52,14 +52,12 @@ class Population(object):
 		self.individuals = sorted(self.individuals, key=lambda Individual: Individual.score)[::-1]
 
 	def get_score(self,top):
-		self.sort()
 		res = 0.0
 		for ind in self.individuals[:top]:
 			res += ind.score
 		return res/top
 
 	def get_best(self):
-		self.sort()
 		return self.individuals[0]
 
 def breed(parentA,parentB):
