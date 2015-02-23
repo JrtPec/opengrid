@@ -317,7 +317,7 @@ class Houseprint(object):
 
         for i in sensors:
             if sensors[i] is None: continue
-            res.append(sensors[i]['Sensor'])
+            res.append(sensors[i])
         return res
         
         
