@@ -319,6 +319,26 @@ class Houseprint(object):
             if sensors[i] is None: continue
             res.append(sensors[i])
         return res
+
+    def get_sensors_for_flukso_by_type(self, flukso_id, sensortype):
+        """
+            Return all sensors for a given flukso id, for a given Type
+
+            Parameters
+            ----------
+            * flukso_id
+            * sensortype: electricity, water, gas
+
+            Return
+            ------
+            list with sensors
+        """
+        res = []
+        sensors = self.get_sensors_for_flukso(flukso_id)
+        for sensor in sensors:
+            if sensor['Type'] == sensortype:
+                res.append(sensor)
+        return res
         
         
 def load_houseprint_from_file(filename):
