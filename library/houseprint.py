@@ -299,6 +299,26 @@ class Houseprint(object):
         f.close()
         
         print("Saved anonymous houseprint to {}".format(abspath))
+
+    def get_sensors_for_flukso(self, flukso_id):
+        """
+            Return all sensors for a given flukso id
+
+            Parameters
+            ----------
+            * flukso_id
+
+            Returns
+            -------
+            list with sensors
+        """
+        res = []
+        sensors = self.get_sensors_for_row(self.flukso_ids[flukso_id])
+
+        for i in sensors:
+            if sensors[i] is None: continue
+            res.append(sensors[i]['Sensor'])
+        return res
         
         
 def load_houseprint_from_file(filename):
