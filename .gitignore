@@ -5,3 +5,4 @@ tests/test_saved_hp.hp
 **.ipynb_checkpoints
 *.pkl
 tests/data_backup/
+data/
