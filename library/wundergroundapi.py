@@ -19,6 +19,7 @@ import urllib2
 import json 
 from pprint import pprint
 import time
+from dateutil import rrule
 
 
 class Wunderground(object):
@@ -297,5 +298,83 @@ def average_temp_xdaysago(key,city,x_days_ago = 5,prop = 'meantempm',columnname 
     temp_values = fetch_historic_dayaverage_by_date(key,city,x_days_ago_date,prop,columnname)
     return temp_values
 
+def get_stored_historic_dayaverage(key,city,start,end):
+    """
+        Fetches and returns daily average temperatures for a given time interval and city
+        Stores the values in a pickle per city, so we don't have to call Wunderground for values we have previously fetched
 
+        Parameters
+        ----------
+        start, end: datetime objects
+        city: "Leuven"
+    """
+
+    indexes = _to_dayset(start=start,end=end)
+    filename = 'dayaverage_{city:s}.pkl'.format(city=city)
+    
+    try:
+        df_temp = pd.read_pickle(filename)
+    except:
+        df_temp = None
+    else:
+        for index in df_temp.index:
+            if index in indexes:
+                indexes.remove(index)
+                
+    if len(indexes) != 0:
+        df_new = fetch_historic_dayaverages(key=key,city=city,dates=indexes)
+        if df_temp is None:
+            df_temp = df_new
+        else:
+            df_temp = df_temp.append(df_new)
+            
+    df_temp.sort(inplace=True)
+    df_temp.to_pickle(filename)
+    return df_temp.ix[start:end]
 	
+def fetch_historic_dayaverages(key,city,dates):
+    """
+        Fetches multiple dayaverages, but waits in between requests so the maximum calls per minute are not exceeded
+
+        Parameters
+        ----------
+        city: 'Leuven'
+        dates: set of datetime objects
+    """
+
+    calls_per_minute = 10.
+    
+    if len(dates) >= calls_per_minute:
+        wait_time = 1/(calls_per_minute/60)
+    else:
+        wait_time = 0
+        
+    res = None
+    last_call = 0
+    print len(dates)," dates to fetch"
+    print "Estimated time: ",len(dates)*wait_time," seconds"
+    for date in dates:
+        while(True):
+            if(time.time()-last_call > wait_time):
+                print "Fetching",date
+                df = fetch_historic_dayaverage_by_date(key=key,city=city,date_object=date)
+                last_call = time.time()
+                if res is None:
+                    res = df
+                else:
+                    res = res.append(df)
+                break
+
+    res = res.sort()
+    res = res.convert_objects(convert_numeric=True)
+    return res
+
+
+def _to_dayset(start,end):
+    """
+        Takes a start and end date and returns a set containing all dates between start and end
+    """
+    res = []
+    for dt in rrule.rrule(rrule.DAILY, dtstart=start, until=end):
+        res.append(dt)
+    return set(res)
