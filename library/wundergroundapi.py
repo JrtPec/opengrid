@@ -356,7 +356,7 @@ def fetch_historic_dayaverages(key,city,dates):
     for date in dates:
         while(True):
             if(time.time()-last_call > wait_time):
-                print "Fetching",date
+                print "Fetching",date.date()
                 df = fetch_historic_dayaverage_by_date(key=key,city=city,date_object=date)
                 last_call = time.time()
                 if res is None:
