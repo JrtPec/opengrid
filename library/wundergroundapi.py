@@ -204,7 +204,8 @@ def fetch_historic_tempYMD(key,city,year,month,day, prop = 'tempm',columnname= '
     Example URL: http://api.wunderground.com/api/<key>/history_20140808/q/EU/Leuven.json
     
     todo: complete docstring    
-    """    
+    """ 
+
     d = datetime.datetime(year,month,day,0,0)
     datestr = '{:%Y%m%d}'.format(d)
     
@@ -298,7 +299,7 @@ def average_temp_xdaysago(key,city,x_days_ago = 5,prop = 'meantempm',columnname 
     temp_values = fetch_historic_dayaverage_by_date(key,city,x_days_ago_date,prop,columnname)
     return temp_values
 
-def get_stored_historic_dayaverage(key,city,start,end):
+def get_stored_historic_dayaverage(key,city,start,end,prop='meantempm',fast=False):
     """
         Fetches and returns daily average temperatures for a given time interval and city
         Stores the values in a pickle per city, so we don't have to call Wunderground for values we have previously fetched
@@ -310,7 +311,10 @@ def get_stored_historic_dayaverage(key,city,start,end):
     """
 
     indexes = _to_dayset(start=start,end=end)
-    filename = 'dayaverage_{city:s}.pkl'.format(city=city)
+    if prop == 'meantempm':
+        filename = 'dayaverage_{city:s}.pkl'.format(city=city)
+    else:
+        filename = '{p:s}_{c:s}.pkl'.format(p=prop,c=city)
     
     try:
         df_temp = pd.read_pickle(filename)
@@ -322,7 +326,7 @@ def get_stored_historic_dayaverage(key,city,start,end):
                 indexes.remove(index)
                 
     if len(indexes) != 0:
-        df_new = fetch_historic_dayaverages(key=key,city=city,dates=indexes)
+        df_new = fetch_historic_dayaverages(key=key,city=city,dates=indexes,prop=prop,fast=fast)
         if df_temp is None:
             df_temp = df_new
         else:
@@ -332,7 +336,7 @@ def get_stored_historic_dayaverage(key,city,start,end):
     df_temp.to_pickle(filename)
     return df_temp.ix[start:end]
 	
-def fetch_historic_dayaverages(key,city,dates):
+def fetch_historic_dayaverages(key,city,dates,prop = 'meantempm',fast=False):
     """
         Fetches multiple dayaverages, but waits in between requests so the maximum calls per minute are not exceeded
 
@@ -340,13 +344,23 @@ def fetch_historic_dayaverages(key,city,dates):
         ----------
         city: 'Leuven'
         dates: set of datetime objects
+        prop: wunderground property to fetch, standard daily mean temperature
+        fast: set True if you want to ignore the call restriction for wunderground
     """
+    if prop == 'meantempm':
+        columnname = 'T_out'
+    else:
+        columnname = prop
+
 
     calls_per_minute = 10.
     
     if len(dates) >= calls_per_minute:
         wait_time = 1/(calls_per_minute/60)
     else:
+        wait_time = 0
+
+    if fast == True:
         wait_time = 0
         
     res = None
@@ -357,7 +371,7 @@ def fetch_historic_dayaverages(key,city,dates):
         while(True):
             if(time.time()-last_call > wait_time):
                 print "Fetching",date.date()
-                df = fetch_historic_dayaverage_by_date(key=key,city=city,date_object=date)
+                df = fetch_historic_dayaverage_by_date(key=key,city=city,date_object=date,prop=prop,columnname=columnname)
                 last_call = time.time()
                 if res is None:
                     res = df
