@@ -31,6 +31,7 @@ class Houseprint(object):
         to self.cellvalues (list of lists).
         """
         self.sensoramount=6
+        self.personamount=8
         
         # Get the path of this current file 
         self.sourcedir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -50,6 +51,9 @@ class Houseprint(object):
         self.sensorcols={}
         for i in range(1,self.sensoramount+1):
             self.sensorcols[i] = self.sheet.find("Sensor "+ str(i)).col
+
+        self._identify_sizes()
+        self._identify_persons(self.personamount)
         
 
         print houseprint + " successfully opened."
@@ -161,8 +165,79 @@ class Houseprint(object):
         for i,f in enumerate(fluksos_all[1:]):
             if f is not None:
                 self.flukso_ids[f] = i+2 # correct for the first row and python indexing from 0 
-        
-                   
+
+    def _identify_sizes(self):
+        """
+        Obtain and store house sizes als self.sizes
+
+        Returns
+        -------
+        nothing
+        """
+
+        col = self.sheet.find('Size of your house').col
+        sizes_all = self.sheet.col_values(col)[1:]
+
+        col = self.sheet.find('Fluksometer serial number').col
+        fluksos_all = self.sheet.col_values(col)[1:]
+
+        self.sizes = dict(zip(fluksos_all,sizes_all))
+
+    def _identify_persons(self,amount):
+        """
+        Obtain and store number of inhabitants and store as self.persons
+
+        Returns
+        -------
+        nothing
+        """
+
+        col = self.sheet.find('Fluksometer serial number').col
+        fluksos_all = self.sheet.col_values(col)[1:]
+
+        personcols={}
+        for i in range(1,amount+1):
+            p_col = self.sheet.find("Person "+ str(i)).col
+            personcols[i] = self.sheet.col_values(p_col)[1:]
+
+        persons = {}
+        for ix, flukso in enumerate(fluksos_all):
+            number = 0
+            for i in range(1,amount+1):
+                try:
+                    year = personcols[i][ix]
+                except:
+                    break
+                else:
+                    if year is not None:
+                        number += 1
+                    else:
+                        break
+
+            if number == 0:
+                number = None
+
+            persons.update({flukso:number})
+
+        self.persons = persons
+
+    def get_persons(self,flukso_id):
+        """
+            Returns number of inhabitants
+        """
+
+        return self.persons[flukso_id]
+
+    def get_size(self,flukso_id):
+        """
+        Returns house size
+        """
+        try:
+            res = int(self.sizes[flukso_id])
+        except:
+            res = self.sizes[flukso_id]
+        else:
+            return res
     
     def get_all_fluksosensors(self):        
         """
