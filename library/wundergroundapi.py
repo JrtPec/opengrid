@@ -466,3 +466,35 @@ def _to_dayset(start,end):
     for dt in rrule.rrule(rrule.DAILY, dtstart=start, until=end):
         res.append(dt)
     return set(res)
+
+def get_hdd(wgkey,location,start,end,basetemp=16.5):
+    """
+        Calculate degree days for a certain location and period
+
+        Parameters
+        ----------
+        wgkey: string
+        location: string
+        start: Pandas Timestamp
+        end: Pandas Timestamp
+        basetemp: (optional, default=16.5)
+
+        Returns
+        -------
+        Pandas DataSeries
+    """
+    
+    new_start = start - pd.Timedelta(days = 2)
+    
+    ts_temp = get_stored_historic_dayaverage(key=wgkey,city=location,start=new_start,end=end,prop='all')['meantempm']
+    
+    hddlist = []
+    for i,temp in enumerate(ts_temp):
+        if i < 2: continue
+        hd = basetemp - (0.6*temp + 0.3*ts_temp[i-1] + 0.1*ts_temp[i-2])
+        hddlist.append(hd)
+        
+    hdd = pd.Series(index = ts_temp[start:end].index,
+                    data = hddlist)
+        
+    return hdd
