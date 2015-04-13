@@ -6,3 +6,4 @@ tests/test_saved_hp.hp
 *.pkl
 tests/data_backup/
 data/
+test_scripts/
