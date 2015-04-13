@@ -284,7 +284,80 @@ def fetch_historic_dayaverage(key,city,year,month,day,prop = "meantempm",columnn
     f.close()
     return Tout_h
     
+def fetch_all_historic_dayaverages(key,city,date_object):
+	year = date_object.year
+	month = date_object.month
+	day = date_object.day
+
+	d = datetime.datetime(year,month,day,0,0)
+	datestr = '{:%Y%m%d}'.format(d)
     
+	URL = ''.join(['http://api.wunderground.com/api/',key,'/history_',datestr,'/q/BE/',city,'.json'])
+	f = urllib2.urlopen(URL) 
+	json_string = f.read() 
+	parsed_json = json.loads(json_string) 
+    
+    #print json_string
+    #pprint(parsed_json["history"]['dailysummary'])
+	hr = "hour"
+	minu = "min"
+    
+	df = None
+
+	proplist = [
+	'fog',
+	'rain',
+	'snow',
+	'snowfallm',
+	'snowdepthm',
+	'meantempm',
+	'meandewptm',
+	'meanpressurem',
+	'meanwindspdm',
+	'meanvism',
+	'humidity',
+	'maxtempm',
+	'mintempm',
+	'maxhumidity',
+	'minhumidity',
+	'maxdewptm',
+	'mindewptm',
+	'maxpressurem',
+	'minpressurem',
+	'maxwspdm',
+	'minwspdm',
+	'maxvism',
+	'minvism',
+	'heatingdegreedays',
+	'coolingdegreedays',
+	'precipm',
+]
+
+	for prop in proplist:
+		time_list=[]
+		value_list= []
+
+		for entry in parsed_json["history"]['dailysummary']:
+	        #"pprint(entry)
+			hour_value = entry["date"][hr]
+			min_value = entry["date"][minu]
+			value = entry[prop]
+			if prop == 'heatingdegreedays' or prop == 'coolingdegreedays':
+				value = float(value)*5/9
+			value_list.append(value)
+			concattime = datetime.datetime(year,month, day,int(hour_value),int(min_value))
+			time_list.append(concattime)
+
+		if df is None:
+			df = pd.DataFrame([value_list],columns = [prop], index=time_list)
+		else:
+			new_df = pd.DataFrame([value_list],columns = [prop], index=time_list)
+			df = df.join(new_df)
+    
+    #Tout_h_T.set_index(time_list)
+	f.close()
+	return df
+
 def fetch_historic_dayaverage_by_date(key,city,date_object,prop = 'meantempm',columnname ='T_out'):
 #same as above, but with dateobject as input. hour / min are ignored
     year = date_object.year
@@ -354,14 +427,11 @@ def fetch_historic_dayaverages(key,city,dates,prop = 'meantempm',fast=False):
 
 
     calls_per_minute = 10.
-    
-    if len(dates) >= calls_per_minute:
-        wait_time = 1/(calls_per_minute/60)
-    else:
-        wait_time = 0
 
     if fast == True:
         wait_time = 0
+    else:
+    	wait_time = 1/(calls_per_minute/60)
         
     res = None
     last_call = 0
@@ -371,7 +441,10 @@ def fetch_historic_dayaverages(key,city,dates,prop = 'meantempm',fast=False):
         while(True):
             if(time.time()-last_call > wait_time):
                 print "Fetching",date.date()
-                df = fetch_historic_dayaverage_by_date(key=key,city=city,date_object=date,prop=prop,columnname=columnname)
+                if prop != 'all':
+                	df = fetch_historic_dayaverage_by_date(key=key,city=city,date_object=date,prop=prop,columnname=columnname)
+                else:
+                	df = fetch_all_historic_dayaverages(key=key,city=city,date_object=date)
                 last_call = time.time()
                 if res is None:
                     res = df
@@ -381,6 +454,7 @@ def fetch_historic_dayaverages(key,city,dates,prop = 'meantempm',fast=False):
 
     res = res.sort()
     res = res.convert_objects(convert_numeric=True)
+    res.index = pd.DatetimeIndex(res.index).normalize()
     return res
 
 
