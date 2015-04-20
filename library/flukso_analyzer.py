@@ -2,6 +2,7 @@ import wundergroundapi as wg
 import config
 import copy
 from handprint import Handprint
+from modulation import Modulation_Analysis
 
 c=config.Config()
 
@@ -54,3 +55,50 @@ def analyze_handprint(flukso):
                       hdd = ts_hdd,
                       elec = ts_elec,
                       water = ts_water)
+
+def analyze_modulation(flukso,start,end,tmposession):
+    """
+        Prepare data for modulation analysis and Run
+
+        Parameters
+        ----------
+        flukso: Flukso
+        start: Pandas Timestamp
+        end: Pandas Timestamp
+        tmposession: TMPO session object
+    """
+    gas = flukso.fetch_ts(sensortype='gas',
+                          head=start,
+                          tail=end,
+                          tmposession=tmposession)
+    if gas is None:
+        return None
+    
+    return Modulation_Analysis(analysis_id=flukso.flukso_id,
+                               gas = gas)
+
+def analyze_onoff(flukso,start,end,tmposession):
+    """
+        Prepare data and run analysis
+        
+        Parameters
+        ----------
+        flukso: Flukso
+        start: Pandas Timestamp
+        end: Pandas Timestamp
+        tmposession: TMPO session object
+        
+        Returns
+        -------
+        Analysis object
+    """
+    
+    gas = flukso.fetch_ts(sensortype='gas',
+                          head=start,
+                          tail=end,
+                          tmposession=tmposession)
+    if gas is None:
+        return None
+    
+    return OnOff_Analysis(analysis_id=flukso.flukso_id,
+                          gas = gas)
