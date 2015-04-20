@@ -5,7 +5,7 @@ class Flukso(object):
     """
         Object to contain a fluksometer and its sensors
     """
-    def __init__(self,flukso_id,location='Leuven'):
+    def __init__(self,flukso_id,location='Leuven',gasenergy=10.):
         '''
             Default location is Leuven sinds the Houseprint does not supply a location
 
@@ -13,10 +13,12 @@ class Flukso(object):
             ----------
             flukso_id: string
             location: string
+            gasenergy: (default 10), Wh per Liter gas
         '''
         self.flukso_id = flukso_id
         
         self.location = location
+        self.gasenergy = gasenergy
         
         self.sensors = []
         
@@ -60,11 +62,14 @@ class Flukso(object):
                 temp.append(sensor) 
         return temp
     
-    def fetch_ts(self,sensortype):
+    def fetch_ts(self,sensortype,head=None,tail=None,tmposession=None):
         '''
             Parameters
             ----------
             sensortype: string ('gas','electricity','water')
+            head: Pandas Timestamp, start of interval
+            tail: Pandas Timestamp, end of interval
+            tmposession: TMPO session object
 
             Returns
             -------
@@ -72,9 +77,19 @@ class Flukso(object):
         '''
         temp = self.get_sensors_by_type(sensortype)
         if len(temp) > 0:
-            return temp[0].fetch_ts()
+            res = temp[0].fetch_ts(head,tail,tmposession)
         else:
             return None
+
+        if res is None:
+            return None
+
+        if sensortype == "gas" and tmposession is not None:
+            #TMPO returns gas data in Liters, so we have to multply by
+            #the energy densitiy of the gas for that household to obtain Wh
+            res = res*self.gasenergy
+
+        return res
 
 class Sensor(object):
     """
@@ -91,17 +106,29 @@ class Sensor(object):
         else:
             self.unit = 'watt'
         
-    def fetch_ts(self):
+    def fetch_ts(self,head=None,tail=None,tmposession=None):
         '''
             Return timeseries for sensor
+
+            Parameters
+            ----------
+            head: Pandas Timestamp
+            tail: Pandas Timestamp
+            tmposession: TMPO Session object
 
             Returns
             -------
             Pandas DataSeries
         '''
-        if not hasattr(self,'ts'):
-            self.ts = self.pull_api()
-        return self.ts
+        if tmposession is None:
+            res = self.pull_api()
+        else: #TMPO
+            res = tmposession.series(self.sensor_id).ix[head:tail]
+            if res.dropna().empty:
+                return None
+            res = dif_interp(res) #right now, this returns minute data only
+            res = res
+        return res
     
     def pull_api(self):
         '''
@@ -168,3 +195,24 @@ def get_all_fluksos_from_houseprint(hp):
         Fluksos.append(new_flukso)
 
     return Fluksos
+
+def dif_interp(ts):
+    """
+        Reformats Cumulative TMPO_data into interpolated and resampled time-data per minute
+
+        Parameters
+        ----------
+        ts: pandas series
+
+        Returns
+        -------
+        Pandas series
+    """
+
+    newindex = ts.resample('min').index
+    ts = ts.reindex(ts.index + newindex)
+    ts = ts.interpolate(method='time')
+    ts = ts.reindex(newindex)
+    ts = ts.diff()
+    ts = ts*3600/60
+    return ts
