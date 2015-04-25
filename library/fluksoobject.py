@@ -91,15 +91,54 @@ class Flukso(object):
 
         return res
 
+    def get_consumption_by_type(self,sensortype,head,tail,tmposession):
+        """
+            Add consumption for sensors of a certain Type
+
+            Parameters
+            ----------
+            sensortype: string (electricity, gas, water)
+            head: Pandas Timestamp
+            tail: Pandas Timestamp
+            tmposession: TMPO session object
+
+            Returns
+            -------
+            float
+        """
+
+        sensors = self.get_sensors_by_type(sensortype)
+        res = 0.
+        for sensor in sensors:
+            res += sensor.get_consumption(head,tail,tmposession)
+
+        return res
+
+    def get_sensorlist(self):
+        """
+            List of all sensor ids
+
+            Returns
+            -------
+            array of strings
+        """
+
+        res = []
+        for sensor in self.sensors:
+            res.append(sensor.sensor_id)
+
+        return res
+
 class Sensor(object):
     """
         Flukso sensor object
     """
-    def __init__(self,sensortype,sensor_id,token,function):
+    def __init__(self,sensortype,sensor_id,token,function,gasenergy=10.):
         self.sensortype = sensortype
         self.sensor_id = sensor_id
         self.token = token
         self.function = function
+        self.gasenergy = gasenergy
         
         if sensortype == 'water':
             self.unit = 'lperday'
@@ -155,6 +194,37 @@ class Sensor(object):
             return None
         else:
             return temp.dropna()
+
+    def get_consumption(self,start,end,tmposession):
+        """
+            Get consumption for a given time period
+
+            Parameters
+            ----------
+            start: Pandas Timestamp
+            end: Pandas Timestamp
+            tmposession: TMPO session object
+
+            Returns
+            -------
+            float
+        """
+        try:
+            ts = tmposession.series(self.sensor_id,head=start,tail=end)
+        except:
+            return 0
+        else:
+            if ts.dropna().empty:
+                return 0
+            else:
+                first = ts[ts.first_valid_index()]
+                last = ts[ts[::-1].first_valid_index()]
+                res = last - first
+
+        if self.sensortype == 'gas':
+            res = res*self.gasenergy
+
+        return res
 
 def get_all_fluksos_from_houseprint(hp):
     """
